@@ -102,6 +102,9 @@ class PicConfig(Config):
 
     IMAGES_PER_GPU = 2
 
+    IMAGE_MIN_DIM = 800
+    IMAGE_MAX_DIM = 1536
+
     # Number of classes
     NUM_CLASSES = 85
 
