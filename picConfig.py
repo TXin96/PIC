@@ -5,9 +5,6 @@ import os
 from config import Config
 import utils
 
-IMAGE_PATH = "api/demo_example/pic/images"
-INSTANCE_PATH = "api/demo_example/pic/instance"
-SEMANTIC_PATH = "api/demo_example/pic/semantic"
 CATEGORY_NAME = [
     "background",
     "human",
@@ -110,11 +107,17 @@ class PicConfig(Config):
 
 
 class PicDataset(utils.Dataset):
-    def load_pic(self, image_dir):
+    instance_image_path = ""
+    semantic_image_path = ""
+
+    def load_pic(self, image_dir, segmentation_dir):
         """Load the PIC dataset.
 
         image_dir: The directory of the PIC dataset.
         """
+
+        self.instance_image_path = os.path.join(segmentation_dir, "instance")
+        self.semantic_image_path = os.path.join(segmentation_dir, "semantic")
 
         # Add classes
         for i in range(len(CATEGORY_NAME)):
@@ -124,9 +127,8 @@ class PicDataset(utils.Dataset):
         datafiles = os.listdir(image_dir)
         for file in datafiles:
             img = cv2.imread(os.path.join(image_dir, file))
-            img_shape = img.shape
-            height = img_shape[0]
-            width = img_shape[1]
+            height = img.shape[0]
+            width = img.shape[1]
             self.add_image(source="pic", image_id=file.replace('.jpg', ''),
                            path=os.path.join(image_dir, file),
                            width=width,
@@ -145,7 +147,7 @@ class PicDataset(utils.Dataset):
         if info["source"] == "pic":
             return info["id"]
         else:
-            super(self.__class__).image_reference(self, image_id=image_id)
+            super(self.__class__).image_reference(image_id)
 
     def load_mask(self, image_id):
         """Load instance masks for the given image.
@@ -161,9 +163,9 @@ class PicDataset(utils.Dataset):
 
         image_name = info['id'] + ".jpg"
 
-        semantic_image = cv2.imread(os.path.join(SEMANTIC_PATH, image_name.replace('.jpg', '.png')),
+        semantic_image = cv2.imread(os.path.join(self.semantic_image_path, image_name.replace('.jpg', '.png')),
                                     cv2.IMREAD_GRAYSCALE)
-        instance_image = cv2.imread(os.path.join(INSTANCE_PATH, image_name.replace('.jpg', '.png')),
+        instance_image = cv2.imread(os.path.join(self.instance_image_path, image_name.replace('.jpg', '.png')),
                                     cv2.IMREAD_GRAYSCALE)
 
         category = np.unique(semantic_image)
@@ -173,7 +175,7 @@ class PicDataset(utils.Dataset):
         instance_masks = []
         class_ids = []
         for categoryId in category:
-            cate_type = CATEGORY_NAME[categoryId]
+            # cate_type = CATEGORY_NAME[categoryId]
             # print(str("category: ") + cate_type)
 
             # instance image which only has instances of this category

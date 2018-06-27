@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import utils
 import model as modellib
 import visualize
-from model import log
 from picConfig import PicConfig
 from picConfig import PicDataset
 
@@ -16,26 +15,26 @@ ROOT_DIR = os.getcwd()
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 
-
-MODEL_DIR = os.path.join(ROOT_DIR, "logs")
 MODEL_PATH = os.path.join(MODEL_DIR, "pic.h5")
 
 # Directory of the images
-IMAGE_PATH = "api/demo_example/pic/images"
-INSTANCE_PATH = "api/demo_example/pic/instance"
-SEMANTIC_PATH = "api/demo_example/pic/semantic"
+TRAIN_IMAGE_PATH = "image/train"
+TRAIN_SEGMENTATION_PATH = "segmentation/train"
+
+VAL_IMAGE_PATH = "image/val"
+VAL_SEGMENTATION_PATH = "segmentation/val"
 
 config = PicConfig()
 config.display()
 
 # Training dataset
 dataset_train = PicDataset()
-dataset_train.load_pic(IMAGE_PATH)
+dataset_train.load_pic(TRAIN_IMAGE_PATH, TRAIN_SEGMENTATION_PATH)
 dataset_train.prepare()
 
 # Validation dataset
 dataset_val = PicDataset()
-dataset_val.load_pic(IMAGE_PATH)
+dataset_val.load_pic(VAL_IMAGE_PATH, VAL_SEGMENTATION_PATH)
 dataset_val.prepare()
 
 
@@ -69,30 +68,24 @@ model = modellib.MaskRCNN(mode="inference",
 
 # Load trained weights
 print("Loading weights from ", MODEL_PATH)
-model.load_weights(MODEL_PATH, by_name=True,
-                   exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"]
-                   )
+model.load_weights(MODEL_PATH, by_name=True)
 
 # Test on a random image
 image_id = random.choice(dataset_val.image_ids)
-original_image, image_meta, gt_class_id, gt_bbox, gt_mask = modellib.load_image_gt(dataset_val, inference_config,
-                                                                                   image_id, use_mini_mask=False)
+image, image_meta, gt_class_id, gt_bbox, gt_mask =\
+    modellib.load_image_gt(dataset_val, config, image_id, use_mini_mask=False)
+info = dataset_val.image_info[image_id]
+print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id,
+                                       dataset_val.image_reference(image_id)))
+# Run object detection
+results = model.detect([image], verbose=1)
 
-log("original_image", original_image)
-log("image_meta", image_meta)
-log("gt_class_id", gt_class_id)
-log("gt_bbox", gt_bbox)
-log("gt_mask", gt_mask)
-
-visualize.display_instances(original_image, gt_bbox, gt_mask, gt_class_id,
-                            dataset_train.class_names, figsize=(8, 8))
-
-
-results = model.detect([original_image], verbose=1)
-
+# Display results
+ax = get_ax(1)
 r = results[0]
-visualize.display_instances(original_image, r['rois'], r['masks'], r['class_ids'],
-                            dataset_val.class_names, r['scores'], ax=get_ax())
+visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
+                            dataset_val.class_names, r['scores'], ax=ax,
+                            title="Predictions")
 
 # ## Evaluation
 
