@@ -36,12 +36,12 @@ dataset_val.load_pic(VAL_IMAGE_PATH, VAL_SEGMENTATION_PATH)
 dataset_val.prepare()
 
 # Load and display random samples
-image_ids = np.random.choice(dataset_train.image_ids, 4)
+image_ids = np.random.choice(dataset_train.image_ids, 1)
 for image_id in image_ids:
     image = dataset_train.load_image(image_id)
     mask, class_ids = dataset_train.load_mask(image_id)
-    # print(mask.shape)
-    # print(class_ids.shape)
+    print(mask.shape)
+    print(class_ids)
     # visualize.display_top_masks(image, mask, class_ids, dataset_train.class_names)
 
 
@@ -55,11 +55,12 @@ model.load_weights(COCO_MODEL_PATH, by_name=True,
                    exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"]
                    )
 
+print("Start training ")
 # Training
 model.train(dataset_train, dataset_val,
             learning_rate=config.LEARNING_RATE,
-            epochs=1,
-            layers='5+')
+            epochs=120,
+            layers='4+')
 
 # Save weights manually
 # Typically not needed because callbacks save after every epoch

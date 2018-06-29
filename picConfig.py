@@ -96,14 +96,14 @@ CATEGORY_NAME = [
 
 class PicConfig(Config):
     # Configuration name
-    NAME = "pic"
+    NAME = "PIC"
 
     GPU_COUNT = 1
 
     IMAGES_PER_GPU = 2
 
     IMAGE_MIN_DIM = 800
-    IMAGE_MAX_DIM = 1536
+    IMAGE_MAX_DIM = 1024
 
     # Number of classes
     NUM_CLASSES = 85
@@ -171,34 +171,26 @@ class PicDataset(utils.Dataset):
         instance_image = cv2.imread(os.path.join(self.instance_image_path, image_name.replace('.jpg', '.png')),
                                     cv2.IMREAD_GRAYSCALE)
 
-        category = np.unique(semantic_image)
-        category = list(category[category != 0])
-
+        semantic = np.unique(semantic_image)
+        semantic = list(semantic[semantic != 0])
+        # color_map = np.load('segColorMap.npy')
         image_size = instance_image.shape
         instance_masks = []
         class_ids = []
-        for categoryId in category:
-            # cate_type = CATEGORY_NAME[categoryId]
-            # print(str("category: ") + cate_type)
 
-            # instance image which only has instances of this category
+        for semanticId in semantic:
             this_cat_ins_image = instance_image.copy()
-            this_cat_ins_image[semantic_image != categoryId] = 0
-
-            # create mask
-            category_mask = np.zeros((image_size[0], image_size[1]))
-
+            this_cat_ins_image[semantic_image != semanticId] = 0
+            instance_mask = np.zeros((image_size[0], image_size[1]))
+            # visualize_ins = visualize_ins.copy()[:, :, np.newaxis]
+            # visualize_ins = np.tile(visualize_ins, (1, 1, 3))
             instance_id = np.unique(this_cat_ins_image)
             instance_id = list(instance_id[instance_id != 0])
-            # print(str("instance_id: ") + str(instance_id))
-
             for i, instance in enumerate(instance_id):
-                #    print(str("instance: ") + str(instance))
-                #    print(str("i: ") + str(i))
-                category_mask[instance_image == instance] = (i + 1) / 255
-
-            instance_masks.append(category_mask)
-            class_ids.append(categoryId)
+                instance_mask[instance_image == instance, ...] = (i + 1)/255
+                instance_masks.append(instance_mask.copy())
+                class_ids.append(semanticId)
+                instance_mask[instance_mask > 0] = 0
 
         mask = np.stack(instance_masks, axis=2)
         class_ids = np.array(class_ids, dtype=np.int32)
