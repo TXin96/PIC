@@ -187,8 +187,12 @@ class PicDataset(utils.Dataset):
             instance_id = np.unique(this_cat_ins_image)
             instance_id = list(instance_id[instance_id != 0])
             for i, instance in enumerate(instance_id):
-                instance_mask[instance_image == instance, ...] = (i + 1)/255
+                instance_mask[instance_image == instance, ...] = 1/255
                 instance_masks.append(instance_mask.copy())
+                # cv2.namedWindow("vis_instance", 0)
+                # cv2.resizeWindow("vis_instance", 1024, 1024)
+                # cv2.imshow('vis_instance', instance_mask)
+                # cv2.waitKey(0)
                 class_ids.append(semanticId)
                 instance_mask[instance_mask > 0] = 0
 

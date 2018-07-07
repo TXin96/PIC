@@ -2,6 +2,7 @@ import os
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+import json
 
 import utils
 import model as modellib
@@ -72,7 +73,7 @@ model.load_weights(MODEL_PATH, by_name=True)
 
 # Test on a random image
 image_id = random.choice(dataset_val.image_ids)
-image, image_meta, gt_class_id, gt_bbox, gt_mask =\
+image, image_meta, gt_class_id, gt_bbox, gt_mask = \
     modellib.load_image_gt(dataset_val, config, image_id, use_mini_mask=False)
 info = dataset_val.image_info[image_id]
 print("image ID: {}.{} ({}) {}".format(info["source"], info["id"], image_id,
@@ -83,10 +84,19 @@ results = model.detect([image], verbose=1)
 # Display results
 ax = get_ax(1)
 r = results[0]
-visualize.display_instances(image, r['rois'], r['masks'], r['class_ids'],
-                            dataset_val.class_names, r['scores'], ax=ax,
+
+visualize.display_instances(image, boxes=r['rois'], masks=r['masks'], class_ids=r['class_ids'],
+                            class_names=dataset_val.class_names, scores=r['scores'], ax=ax,
+                            figsize=[image.shape[0], image.shape[1]],
                             title="Predictions")
 
+for i in r:
+    r[i] = r[i].tolist()
+r.pop('masks')
+r.pop('scores')
+r['image_name'] = info['id'] + '.jpg'
+with open('result.json', 'w') as outfile:
+    json.dump(r, outfile, ensure_ascii=False)
+
+
 # Evaluation
-
-
