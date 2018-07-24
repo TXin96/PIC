@@ -9,7 +9,8 @@ from picConfig import PicDataset
 ROOT_DIR = os.getcwd()
 
 # Directory to save logs and trained model
-MODEL_DIR = os.path.join(ROOT_DIR, "logs")
+LOG_SAVE_PATH = os.path.join(ROOT_DIR, "logs")
+MODEL_SAVE_PATH = os.path.join(ROOT_DIR, "model")
 
 # Local path to trained weights file
 COCO_MODEL_PATH = "model/mask_rcnn_coco.h5"
@@ -47,7 +48,7 @@ for image_id in image_ids:
 
 # Create model in training mode
 model = modellib.MaskRCNN(mode="training", config=config,
-                          model_dir=MODEL_DIR)
+                          model_dir=LOG_SAVE_PATH)
 
 # Load weights
 print("Loading weights ", COCO_MODEL_PATH)
@@ -55,8 +56,8 @@ model.load_weights(COCO_MODEL_PATH, by_name=True,
                    exclude=["mrcnn_class_logits", "mrcnn_bbox_fc", "mrcnn_bbox", "mrcnn_mask"]
                    )
 
-print("Start training ")
 # Training
+print("Start training ")
 model.train(dataset_train, dataset_val,
             learning_rate=config.LEARNING_RATE,
             epochs=120,
@@ -64,6 +65,6 @@ model.train(dataset_train, dataset_val,
 
 # Save weights manually
 # Typically not needed because callbacks save after every epoch
-model_path = os.path.join(MODEL_DIR, "pic.h5")
+model_path = os.path.join(MODEL_SAVE_PATH, "pic_new.h5")
 model.keras_model.save_weights(model_path)
 print("Weights saved at ", model_path)

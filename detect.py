@@ -10,8 +10,8 @@ from picConfig import PicConfig
 ROOT_DIR = os.getcwd()
 
 # Directory to save logs and trained model
-MODEL_DIR = os.path.join(ROOT_DIR, "logs")
-MODEL_PATH = os.path.join(MODEL_DIR, "pic.h5")
+LOG_SAVE_PATH = os.path.join(ROOT_DIR, "logs")
+MODEL_PATH = os.path.join(ROOT_DIR, "model/pic.h5")
 
 # Directory of the images
 TRAIN_IMAGE_PATH = "image/train"
@@ -42,7 +42,7 @@ def detect(image_dir, instance_save_path, semantic_save_path):
     # Recreate the model in inference mode
     model = modellib.MaskRCNN(mode="inference",
                               config=inference_config,
-                              model_dir=MODEL_DIR)
+                              model_dir=LOG_SAVE_PATH)
 
     # Load trained weights
     print("Loading weights from ", MODEL_PATH)
@@ -53,18 +53,26 @@ def detect(image_dir, instance_save_path, semantic_save_path):
         datafiles = os.listdir(image_dir)
 
         for file in datafiles:
+            print('name: ', file)
             image = cv2.imread(os.path.join(image_dir, file))
             results = model.detect([image], verbose=1)
             r = results[0]
-
             masks = r['masks']
             class_id = r['class_ids']
+            non_zero_area = np.sum(np.sum(masks, axis=0), axis=0)
+            sorted_mask_index = np.argsort(non_zero_area)
+            print('非0面积: ', non_zero_area)
+            print('排序: ', sorted_mask_index)
+            print('id: ', class_id)
+
             instance_num = r['rois'].shape[0]
 
             instance_image = np.zeros((masks.shape[0], masks.shape[1])).astype(np.uint8)
             semantic_image = np.zeros((masks.shape[0], masks.shape[1])).astype(np.uint8)
 
-            for j in range(instance_num):
+            for j in range(instance_num-1, -1, -1):
+                print(j)
+                j = sorted_mask_index[j]
                 print(j)
                 mask = masks[:, :, j]
                 print(mask.shape)
